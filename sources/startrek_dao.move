@@ -136,24 +136,24 @@ module movefuns::startrek_dao {
         mentee_join(&sender, Option::some(image_data), Option::some(image_url))
     }
 
-    public fun create_mentor_join_proposal<DAOT: store, TokenT: store>(sender: &signer, description: vector<u8>, candidate: address, action_delay: u64) {
+    public fun create_mentor_join_proposal<TokenT: store>(sender: &signer, description: vector<u8>, candidate: address, action_delay: u64) {
         assert!(!DAOSpace::is_member<StarTrekDAO>(candidate), Errors::invalid_state(ERR_MENBER_ALREADY));
         let witness = StarTrekPlugin {};
-        let cap = DAOSpace::acquire_proposal_cap<DAOT, StarTrekPlugin>(&witness);
+        let cap = DAOSpace::acquire_proposal_cap<StarTrekDAO, StarTrekPlugin>(&witness);
         let action = MentorJoinAction<TokenT> {
             candidate,
         };
         DAOSpace::create_proposal(&cap, sender, action, description, action_delay);
     }
 
-    public(script) fun create_mentor_join_proposal_entry<DAOT: store, TokenT: store>(sender: signer, description: vector<u8>, candidate: address, action_delay: u64) {
-        create_mentor_join_proposal<DAOT, TokenT>(&sender, description, candidate, action_delay);
+    public(script) fun create_mentor_join_proposal_entry<TokenT: store>(sender: signer, description: vector<u8>, candidate: address, action_delay: u64) {
+        create_mentor_join_proposal<TokenT>(&sender, description, candidate, action_delay);
     }
 
-    public fun execute_mentor_join_proposal<DAOT: store, TokenT: store>(sender: &signer, proposal_id: u64, image_data: Option::Option<vector<u8>>, image_url: Option::Option<vector<u8>>) {
+    public fun execute_mentor_join_proposal<TokenT: store>(sender: &signer, proposal_id: u64, image_data: Option::Option<vector<u8>>, image_url: Option::Option<vector<u8>>) {
         let witness = StarTrekPlugin {};
-        let proposal_cap = DAOSpace::acquire_proposal_cap<DAOT, StarTrekPlugin>(&witness);
-        let MentorJoinAction<TokenT> { candidate } = DAOSpace::execute_proposal<DAOT, StarTrekPlugin, MentorJoinAction<TokenT>>(&proposal_cap, sender, proposal_id);
+        let proposal_cap = DAOSpace::acquire_proposal_cap<StarTrekDAO, StarTrekPlugin>(&witness);
+        let MentorJoinAction<TokenT> { candidate } = DAOSpace::execute_proposal<StarTrekDAO, StarTrekPlugin, MentorJoinAction<TokenT>>(&proposal_cap, sender, proposal_id);
         assert!(candidate == Signer::address_of(sender), Errors::invalid_state(ERR_NOT_CANDIDATE));
 
         let cap = DAOSpace::acquire_member_cap<StarTrekDAO, StarTrekPlugin>(&witness);
@@ -167,16 +167,16 @@ module movefuns::startrek_dao {
         );
     }
 
-    public(script) fun execute_mentor_join_proposal_entry<DAOT: store, TokenT: store>(sender: signer, proposal_id: u64, image_data: vector<u8>, image_url: vector<u8>) {
-        execute_mentor_join_proposal<DAOT, TokenT>(&sender, proposal_id, Option::some(image_data), Option::some(image_url));
+    public(script) fun execute_mentor_join_proposal_entry<TokenT: store>(sender: signer, proposal_id: u64, image_data: vector<u8>, image_url: vector<u8>) {
+        execute_mentor_join_proposal<TokenT>(&sender, proposal_id, Option::some(image_data), Option::some(image_url));
     }
 
-    public fun create_mentee_graduation_proposal<DAOT: store, TokenT: store>(sender: &signer, graduation_level: u8, description: vector<u8>, action_delay: u64) {
+    public fun create_mentee_graduation_proposal<TokenT: store>(sender: &signer, graduation_level: u8, description: vector<u8>, action_delay: u64) {
         let mentee = Signer::address_of(sender);
         check_level_valid(graduation_level);
 
         let witness = StarTrekPlugin {};
-        let cap = DAOSpace::acquire_proposal_cap<DAOT, StarTrekPlugin>(&witness);
+        let cap = DAOSpace::acquire_proposal_cap<StarTrekDAO, StarTrekPlugin>(&witness);
         let action = MenteeGraduationAction<TokenT> {
             mentee,
             level: graduation_level,
@@ -184,31 +184,31 @@ module movefuns::startrek_dao {
         DAOSpace::create_proposal(&cap, sender, action, description, action_delay);
     }
 
-    public(script) fun create_mentee_graduation_proposal_entry<DAOT: store, TokenT: store>(sender: signer, graduation_level: u8, description: vector<u8>, action_delay: u64) {
-        create_mentee_graduation_proposal<DAOT, TokenT>(&sender, graduation_level, description, action_delay);
+    public(script) fun create_mentee_graduation_proposal_entry<TokenT: store>(sender: signer, graduation_level: u8, description: vector<u8>, action_delay: u64) {
+        create_mentee_graduation_proposal<TokenT>(&sender, graduation_level, description, action_delay);
     }
 
-    public fun execute_mentee_graduation_proposal<DAOT: store, TokenT: store>(sender: &signer, proposal_id: u64)
+    public fun execute_mentee_graduation_proposal<TokenT: store>(sender: &signer, proposal_id: u64)
     acquires GraduationCertificate {
         let witness = StarTrekPlugin {};
-        let proposal_cap = DAOSpace::acquire_proposal_cap<DAOT, StarTrekPlugin>(&witness);
-        let MenteeGraduationAction<TokenT> { mentee, level } = DAOSpace::execute_proposal<DAOT, StarTrekPlugin, MenteeGraduationAction<TokenT>>(
+        let proposal_cap = DAOSpace::acquire_proposal_cap<StarTrekDAO, StarTrekPlugin>(&witness);
+        let MenteeGraduationAction<TokenT> { mentee, level } = DAOSpace::execute_proposal<StarTrekDAO, StarTrekPlugin, MenteeGraduationAction<TokenT>>(
             &proposal_cap,
             sender,
             proposal_id,
         );
         assert!(mentee == Signer::address_of(sender), Errors::invalid_state(ERR_NOT_CANDIDATE));
 
-        let token_cap = DAOSpace::acquire_withdraw_token_cap<DAOT, StarTrekPlugin>(&witness);
+        let token_cap = DAOSpace::acquire_withdraw_token_cap<StarTrekDAO, StarTrekPlugin>(&witness);
         let amount = compute_graduation_award_amount(mentee, level);
-        let awards = DAOSpace::withdraw_token<DAOT, StarTrekPlugin, TokenT>(&token_cap, amount);
+        let awards = DAOSpace::withdraw_token<StarTrekDAO, StarTrekPlugin, TokenT>(&token_cap, amount);
         Account::deposit_to_self<TokenT>(sender, awards);
         update_mentee_graduation_certificate(sender, level);
     }
 
-    public(script) fun execute_mentee_graduation_proposal_entry<DAOT: store, TokenT: store>(sender: signer, proposal_id: u64)
+    public(script) fun execute_mentee_graduation_proposal_entry<TokenT: store>(sender: signer, proposal_id: u64)
     acquires GraduationCertificate {
-        execute_mentee_graduation_proposal<DAOT, TokenT>(&sender, proposal_id);
+        execute_mentee_graduation_proposal<TokenT>(&sender, proposal_id);
     }
 
     fun check_level_valid(level: u8) {
