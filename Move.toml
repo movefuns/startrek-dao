@@ -1,0 +1,16 @@
+[package]
+authors = ["MoveFuns DAO contributors"]
+name = "StarTrekDAO"
+version = "1.0.0"
+
+[addresses]
+std = "0x1"
+StarcoinFramework = "0x1"
+
+# TODO: deploy and get the exact address
+movefuns = "0x1"
+
+[dependencies]
+StarcoinFramework = {git = "https://github.com/starcoinorg/starcoin-framework.git", rev = "7a38b4b8b99f6d61eaa5e38479ad0b1ab2292bc4"}
+
+[dev-addresses]
